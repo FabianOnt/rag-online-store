@@ -116,16 +116,6 @@ project/
 │   ├── generate_products.py
 │   ├── generate_reviews.py
 │   └── loader.py
-├── secrets/
-│   ├── app_api_admin_key
-│   ├── chat_cache_password
-│   ├── chat_db_non_root_password
-│   ├── chat_db_root_password
-│   ├── embeddings_api_admin_key
-│   ├── ollama_nodes
-│   ├── store_db_agent_password
-│   ├── store_db_non_root_password
-│   └── store_db_root_password
 ├── secrets.example/
 │   ├── app_api_admin_key
 │   ├── chat_cache_password
@@ -142,7 +132,6 @@ project/
 │   ├── create_views.sql
 │   └── grant_privileges.sh
 ├── docker-compose.yaml
-├── .env
 ├── .env.example
 └── README.md
 
