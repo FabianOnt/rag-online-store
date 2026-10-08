@@ -1,0 +1,4 @@
+server <IP_1>:<PORT_1> max_fails=2 fail_timeout=10s weight=1,
+server <IP_2>:<PORT_2> max_fails=2 fail_timeout=10s weight=1,
+...
+server <IP_N>:<PORT_N> max_fails=2 fail_timeout=10s weight=1;

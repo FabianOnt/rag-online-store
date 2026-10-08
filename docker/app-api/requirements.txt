@@ -1,0 +1,10 @@
+fastapi[standard]
+langchain
+langchain-ollama
+sqlalchemy
+response
+pydantic
+bcrypt
+pgvector
+psycopg2-binary
+redis

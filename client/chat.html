@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG System - AI Knowledge Workspace</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f6ff',
+                            100: '#e0edff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.8);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(71, 85, 105, 1);
+        }
+        .chat-bubble-user {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        }
+        .chat-bubble-assistant {
+            background: #1e293b;
+            border: 1px solid #334155;
+        }
+    </style>
+</head>
+<body class="h-full font-sans antialiased bg-slate-950 text-slate-100 overflow-hidden">
+
+    <div id="app" class="h-full w-full flex flex-col">
+        
+        <!-- ================================================================= -->
+        <!-- VIEW 1: AUTHENTICATION (LOGIN / SIGNUP)                          -->
+        <!-- ================================================================= -->
+        <div id="authView" class="h-full w-full flex items-center justify-center p-4 relative overflow-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black">
+            <!-- Decorative Background Glows -->
+            <div class="absolute -top-40 -left-40 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="w-full max-w-md bg-slate-900/90 border border-slate-800 backdrop-blur-xl p-8 rounded-2xl shadow-2xl z-10">
+                <div class="flex items-center justify-center gap-3 mb-8">
+                    <div class="p-2.5 bg-blue-600/20 border border-blue-500/30 rounded-xl text-blue-400">
+                        <i data-lucide="cpu" class="w-7 h-7"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold tracking-tight text-white">RAG System</h1>
+                        <p class="text-xs text-slate-400">Enterprise AI Knowledge Assistant</p>
+                    </div>
+                </div>
+
+                <!-- Form Tabs Toggle -->
+                <div class="flex bg-slate-950 p-1 rounded-xl mb-6 border border-slate-800">
+                    <button id="tabLoginBtn" onclick="switchAuthMode('login')" class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-200 text-white bg-slate-800 shadow-sm">
+                        Log In
+                    </button>
+                    <button id="tabSignupBtn" onclick="switchAuthMode('signup')" class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-200 text-slate-400 hover:text-white">
+                        Create Account
+                    </button>
+                </div>
+
+                <!-- Auth Form -->
+                <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                    <div id="nameFieldGroup" class="hidden space-y-1">
+                        <label class="text-xs font-medium text-slate-300">Full Name</label>
+                        <div class="relative">
+                            <i data-lucide="user" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
+                            <input type="text" id="authName" placeholder="Alex Johnson" class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-slate-300">Email Address</label>
+                        <div class="relative">
+                            <i data-lucide="mail" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
+                            <input type="email" id="authEmail" required placeholder="name@company.com" class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-slate-300">Password</label>
+                        <div class="relative">
+                            <i data-lucide="lock" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
+                            <input type="password" id="authPassword" required placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <button type="submit" id="authSubmitBtn" class="w-full mt-4 py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm rounded-lg transition duration-200 shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2">
+                        <span>Sign In</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- VIEW 2: RAG CHATBOT DASHBOARD                                    -->
+        <!-- ================================================================= -->
+        <div id="dashboardView" class="hidden h-full w-full flex-col bg-slate-950">
+            
+            <!-- Global Top Navigation Bar -->
+            <header class="h-14 border-b border-slate-800 bg-slate-900/60 backdrop-blur px-4 flex items-center justify-between z-20">
+                <div class="flex items-center gap-3">
+                    <button id="toggleSidebarMobile" onclick="toggleMobileSidebar()" class="lg:hidden p-2 text-slate-400 hover:text-white rounded-lg border border-slate-800">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <div class="p-1.5 bg-blue-600/20 border border-blue-500/30 rounded-lg text-blue-400">
+                            <i data-lucide="cpu" class="w-5 h-5"></i>
+                        </div>
+                        <span class="font-bold text-slate-100 tracking-tight text-base hidden sm:inline">RAG System</span>
+                    </div>
+                </div>
+
+                <!-- Right Header Actions / Profile -->
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="text-right hidden sm:block">
+                            <div id="navUserName" class="text-xs font-semibold text-slate-200">User</div>
+                            <div id="navUserEmail" class="text-[10px] text-slate-400">user@example.com</div>
+                        </div>
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-bold text-xs text-white uppercase shadow-sm" id="userAvatar">
+                            US
+                        </div>
+                        <button onclick="handleLogout()" class="p-2 text-slate-400 hover:text-rose-400 transition hover:bg-slate-800 rounded-lg" title="Log Out">
+                            <i data-lucide="log-out" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Body Layout (Sidebar + Chat Area) -->
+            <div class="flex-1 flex overflow-hidden relative">
+                
+                <!-- Overlay for Mobile Sidebar -->
+                <div id="sidebarOverlay" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-slate-950/80 z-20 hidden lg:hidden backdrop-blur-sm"></div>
+
+                <!-- LEFT SIDEBAR: Chat Threads List -->
+                <aside id="chatSidebar" class="absolute lg:relative z-30 w-80 h-full bg-slate-900 border-r border-slate-800 flex flex-col transition-transform duration-300 -translate-x-full lg:translate-x-0">
+                    
+                    <!-- Sidebar Header: New Chat -->
+                    <div class="p-3 border-b border-slate-800 space-y-3">
+                        <button onclick="createNewChat()" class="w-full py-2.5 px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition shadow-md shadow-blue-900/20">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                            <span>New RAG Search</span>
+                        </button>
+                        
+                        <div class="relative">
+                            <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500"></i>
+                            <input type="text" id="chatSearchInput" oninput="renderChatList()" placeholder="Filter chat history..." class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-slate-700">
+                        </div>
+                    </div>
+
+                    <!-- Scrollable Chat Threads List -->
+                    <div id="chatThreadsContainer" class="flex-1 overflow-y-auto p-2 space-y-1">
+                        <!-- Dynamic items injected here via JS -->
+                    </div>
+                </aside>
+
+                <!-- RIGHT MAIN PANEL: Active Chat & Messages -->
+                <main class="flex-1 flex flex-col h-full bg-slate-950 overflow-hidden relative">
+                    
+                    <!-- Chat Header Bar -->
+                    <div class="h-14 border-b border-slate-800 bg-slate-900/40 px-6 flex items-center justify-between gap-4">
+                        <div class="min-w-0 flex-1">
+                            <h2 id="activeChatTitle" class="text-sm font-semibold text-slate-100 truncate">Select a chat context</h2>
+                        </div>
+                    </div>
+
+                    <!-- Messages History Area -->
+                    <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+                        <!-- Dynamic message bubbles injected here -->
+                    </div>
+
+                    <!-- Interactive Message Input Area -->
+                    <div class="p-4 border-t border-slate-800/80 bg-slate-900/30">
+                        <div class="max-w-4xl mx-auto space-y-2">
+                            <form onsubmit="handleSendMessage(event)" class="relative flex items-center bg-slate-900 border border-slate-800 rounded-2xl shadow-xl focus-within:border-blue-500/60 focus-within:ring-1 focus-within:ring-blue-500/40">
+                                <textarea id="messageInput" rows="1" onkeydown="handleKeyDown(event)" placeholder="Ask a question..." class="w-full bg-transparent border-0 resize-none py-3 px-4 text-sm text-slate-100 placeholder-slate-500 focus:ring-0 focus:outline-none max-h-32 min-h-[44px]"></textarea>
+
+                                <button type="submit" id="sendBtn" class="m-1.5 p-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition flex items-center justify-center disabled:opacity-40">
+                                    <i data-lucide="send" class="w-4 h-4"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                </main>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toast Notification Overlay -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 bg-slate-800 border border-slate-700 text-slate-100 px-4 py-2.5 rounded-xl shadow-2xl text-xs flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <i data-lucide="info" class="w-4 h-4 text-blue-400"></i>
+        <span id="toastMessage">Notification message</span>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- REAL BACKEND INTEGRATION                                          -->
+    <!-- ================================================================= -->
+    <script>
+        const BASE_URL = "http://localhost:8000";
+
+        // Active App State
+        let sessionToken = null;
+        let currentUser = null;
+        let authMode = 'login'; 
+        let chatThreads = [];
+        let activeChatToken = null;
+
+        window.onload = function() {
+            lucide.createIcons();
+            // Check if user is already logged in via localStorage
+            const storedToken = localStorage.getItem('sessionToken');
+            const storedUser = localStorage.getItem('currentUser');
+            if (storedToken && storedUser) {
+                sessionToken = storedToken;
+                currentUser = JSON.parse(storedUser);
+                updateUserHeaderUI();
+                transitionToDashboard();
+            }
+        };
+
+        // --- API Wrappers[cite: 1] ---
+
+        async function apiCall(endpoint, payload = {}) {
+            try {
+                const response = await fetch(`${BASE_URL}${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.detail || data.error || `HTTP ${response.status}`);
+                }
+                return data;
+            } catch (error) {
+                console.error(`API Error on ${endpoint}:`, error);
+                throw error;
+            }
+        }
+
+        async function registerUser(name, email, password) {
+            return await apiCall('/customer/users', { name, email, password });
+        }
+
+        async function loginUser(email, password) {
+            return await apiCall('/customer/login', { email, password });
+        }
+
+        async function logoutUser() {
+            if (!sessionToken) return;
+            return await apiCall('/customer/logout', { session_token: sessionToken });
+        }
+
+        async function createChat(name) {
+            return await apiCall('/customer/chats', { name, session_token: sessionToken });
+        }
+
+        async function getChats() {
+            return await apiCall('/customer/chats/list', { session_token: sessionToken });
+        }
+
+        async function getMessages(chatToken) {
+            return await apiCall('/customer/messages/list', { chat_token: chatToken, session_token: sessionToken });
+        }
+
+        async function sendQuery(queryText, chatToken) {
+            return await apiCall('/customer/query', { query: queryText, chat_token: chatToken, session_token: sessionToken });
+        }
+
+        // --- UI Interactions ---
+
+        function switchAuthMode(mode) {
+            authMode = mode;
+            const tabLogin = document.getElementById('tabLoginBtn');
+            const tabSignup = document.getElementById('tabSignupBtn');
+            const nameGroup = document.getElementById('nameFieldGroup');
+            const submitBtn = document.getElementById('authSubmitBtn');
+
+            if (mode === 'signup') {
+                tabSignup.className = 'flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-200 text-white bg-slate-800 shadow-sm';
+                tabLogin.className = 'flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-200 text-slate-400 hover:text-white';
+                nameGroup.classList.remove('hidden');
+                submitBtn.querySelector('span').innerText = 'Create Account';
+            } else {
+                tabLogin.className = 'flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-200 text-white bg-slate-800 shadow-sm';
+                tabSignup.className = 'flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-200 text-slate-400 hover:text-white';
+                nameGroup.classList.add('hidden');
+                submitBtn.querySelector('span').innerText = 'Sign In';
+            }
+        }
+
+        async function handleAuthSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+            const name = document.getElementById('authName').value;
+
+            const submitBtn = document.getElementById('authSubmitBtn');
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-70');
+
+            try {
+                if (authMode === 'signup') {
+                    await registerUser(name, email, password);
+                    showToast('Account created! Logging in...');
+                }
+
+                const res = await loginUser(email, password);
+                
+                sessionToken = res.session_token || res.token; 
+                currentUser = {
+                    name: res.name || name || email.split('@')[0],
+                    email: email,
+                    avatar: (res.name || name || email).substring(0, 2).toUpperCase()
+                };
+
+                localStorage.setItem('sessionToken', sessionToken);
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+                updateUserHeaderUI();
+                showToast(`Welcome, ${currentUser.name}!`);
+                transitionToDashboard();
+                
+            } catch (err) {
+                showToast(err.message || 'Authentication failed. Please check details.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-70');
+            }
+        }
+
+        function transitionToDashboard() {
+            document.getElementById('authView').classList.add('hidden');
+            document.getElementById('dashboardView').classList.remove('hidden');
+            document.getElementById('dashboardView').classList.add('flex');
+            loadDashboardData();
+        }
+
+        function updateUserHeaderUI() {
+            if (!currentUser) return;
+            document.getElementById('navUserName').innerText = currentUser.name;
+            document.getElementById('navUserEmail').innerText = currentUser.email;
+            document.getElementById('userAvatar').innerText = currentUser.avatar;
+        }
+
+        async function handleLogout() {
+            try {
+                await logoutUser();
+            } catch (e) {
+                console.error("Logout failed on server:", e);
+            }
+            
+            sessionToken = null;
+            currentUser = null;
+            activeChatToken = null;
+            chatThreads = [];
+            
+            localStorage.removeItem('sessionToken');
+            localStorage.removeItem('currentUser');
+
+            document.getElementById('dashboardView').classList.add('hidden');
+            document.getElementById('dashboardView').classList.remove('flex');
+            document.getElementById('authView').classList.remove('hidden');
+            showToast('Logged out successfully.');
+        }
+
+        async function loadDashboardData() {
+            try {
+                const res = await getChats();
+                chatThreads = res.chats || res || [];
+                renderChatList();
+                
+                if (chatThreads.length > 0) {
+                    selectChatThread(chatThreads[0].chat_token || chatThreads[0].id);
+                } else {
+                    createNewChat();
+                }
+            } catch (e) {
+                showToast('Failed to load chat history.');
+            }
+        }
+
+        function renderChatList() {
+            const container = document.getElementById('chatThreadsContainer');
+            const searchQuery = document.getElementById('chatSearchInput').value.toLowerCase();
+            container.innerHTML = '';
+
+            const filteredThreads = chatThreads.filter(t => 
+                (t.name || t.title || '').toLowerCase().includes(searchQuery)
+            );
+
+            if (filteredThreads.length === 0) {
+                container.innerHTML = `<div class="p-4 text-center text-xs text-slate-500">No chat threads found.</div>`;
+                return;
+            }
+
+            filteredThreads.forEach(thread => {
+                const threadId = thread.chat_token || thread.id;
+                const threadName = thread.name || thread.title || 'Conversation';
+                const isActive = threadId === activeChatToken;
+                
+                const threadEl = document.createElement('div');
+                threadEl.className = `group relative flex items-center justify-between p-3 rounded-xl cursor-pointer transition ${
+                    isActive 
+                    ? 'bg-blue-600/15 border border-blue-500/30 text-white' 
+                    : 'hover:bg-slate-800/60 text-slate-300 border border-transparent'
+                }`;
+                
+                threadEl.onclick = () => selectChatThread(threadId);
+
+                threadEl.innerHTML = `
+                    <div class="flex items-start gap-3 min-w-0 pr-6">
+                        <i data-lucide="message-square" class="w-4 h-4 mt-0.5 ${isActive ? 'text-blue-400' : 'text-slate-500'}"></i>
+                        <div class="min-w-0">
+                            <div class="text-xs font-medium truncate ${isActive ? 'text-blue-200' : 'text-slate-200'}">${escapeHtml(threadName)}</div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(threadEl);
+            });
+
+            lucide.createIcons();
+        }
+
+        async function selectChatThread(chatToken) {
+            activeChatToken = chatToken;
+            renderChatList();
+
+            const thread = chatThreads.find(t => (t.chat_token || t.id) === chatToken);
+            if (!thread) return;
+
+            document.getElementById('activeChatTitle').innerText = thread.name || thread.title || 'Conversation';
+
+            try {
+                const res = await getMessages(chatToken);
+                const messages = res.messages || res || [];
+                renderMessages(messages);
+            } catch (e) {
+                showToast('Failed to load messages.');
+                renderMessages([]);
+            }
+            
+            const sidebar = document.getElementById('chatSidebar');
+            if (!sidebar.classList.contains('-translate-x-full')) {
+                toggleMobileSidebar();
+            }
+        }
+
+        async function createNewChat() {
+            try {
+                const newChatName = `Chat ${new Date().toLocaleDateString()}`;
+                const res = await createChat(newChatName);
+                
+                const newThread = {
+                    chat_token: res.chat_token || res.id,
+                    name: res.name || newChatName,
+                };
+
+                chatThreads.unshift(newThread);
+                selectChatThread(newThread.chat_token);
+                showToast('New chat initialized.');
+            } catch (e) {
+                showToast('Failed to create new chat.');
+            }
+        }
+
+        function renderMessages(messages) {
+            const container = document.getElementById('messagesContainer');
+            container.innerHTML = '';
+
+            messages.forEach(msg => {
+                const bubble = createMessageBubble(msg);
+                container.appendChild(bubble);
+            });
+
+            scrollToBottom();
+            lucide.createIcons();
+        }
+
+        function createMessageBubble(msg) {
+            const isUser = msg.sender === 'user';
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex gap-3 max-w-3xl ${isUser ? 'ml-auto flex-row-reverse' : 'mr-auto'}`;
+
+            const avatar = document.createElement('div');
+            avatar.className = `w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-xs font-bold ${
+                isUser ? 'bg-blue-600 text-white' : 'bg-slate-800 border border-slate-700 text-blue-400'
+            }`;
+            avatar.innerHTML = isUser ? (currentUser ? currentUser.avatar : 'YOU') : '<i data-lucide="bot" class="w-4 h-4"></i>';
+
+            const body = document.createElement('div');
+            body.className = `space-y-1.5 ${isUser ? 'items-end' : 'items-start'}`;
+
+            const bubbleContent = document.createElement('div');
+            bubbleContent.className = `p-4 rounded-2xl text-sm leading-relaxed ${
+                isUser ? 'chat-bubble-user text-white rounded-tr-none' : 'chat-bubble-assistant text-slate-100 rounded-tl-none shadow-sm'
+            }`;
+            
+            let formattedText = escapeHtml(msg.text || msg.content || '')
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-white">$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em class="text-slate-300">$1</em>')
+                .replace(/\n/g, '<br>');
+
+            bubbleContent.innerHTML = formattedText;
+            body.appendChild(bubbleContent);
+            wrapper.appendChild(avatar);
+            wrapper.appendChild(body);
+
+            return wrapper;
+        }
+
+        async function handleSendMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+
+            if (!text || !activeChatToken) return;
+
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+
+            input.value = '';
+            input.style.height = 'auto';
+
+            const container = document.getElementById('messagesContainer');
+            const tempUserMsg = { sender: 'user', text: text };
+            container.appendChild(createMessageBubble(tempUserMsg));
+
+            const typingIndicator = createTypingIndicator();
+            container.appendChild(typingIndicator);
+            scrollToBottom();
+
+            try {
+                const response = await sendQuery(text, activeChatToken);
+                typingIndicator.remove();
+                
+                const assistantMsg = { 
+                    sender: 'assistant', 
+                    text: response.text || response.answer || response.response || 'No response provided.'
+                };
+                container.appendChild(createMessageBubble(assistantMsg));
+            } catch (err) {
+                typingIndicator.remove();
+                showToast('Error communicating with the assistant.');
+                container.appendChild(createMessageBubble({ 
+                    sender: 'assistant', 
+                    text: '⚠️ An error occurred while processing your request.' 
+                }));
+            }
+
+            scrollToBottom();
+            sendBtn.disabled = false;
+        }
+
+        function createTypingIndicator() {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex gap-3 max-w-3xl mr-auto';
+            wrapper.innerHTML = `
+                <div class="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 text-blue-400 flex items-center justify-center shrink-0">
+                    <i data-lucide="bot" class="w-4 h-4"></i>
+                </div>
+                <div class="chat-bubble-assistant text-slate-100 p-4 rounded-2xl rounded-tl-none flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"></span>
+                    <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                    <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                </div>
+            `;
+            return wrapper;
+        }
+
+        function handleKeyDown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage(e);
+            }
+        }
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('chatSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('messagesContainer');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>

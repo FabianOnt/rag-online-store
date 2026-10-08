@@ -218,3 +218,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# reviews
+/sample-data/reviews/*
+!/sample-data/reviews/.gitkeep

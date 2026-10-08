@@ -1,0 +1,198 @@
+services:
+
+  store-db:
+    image: pgvector/pgvector:pg17
+    container_name: store-db
+    restart: always
+    ports:
+      - "${STORE_DB_HOST_PORT}:5432"
+    environment:
+      POSTGRES_DB: ${STORE_DB_NAME}
+      POSTGRES_USER: ${STORE_DB_ROOT_USER}
+      POSTGRES_PASSWORD_FILE: /run/secrets/root_password
+      POSTGRES_NON_ROOT_USER: ${STORE_DB_NON_ROOT_USER}
+      POSTGRES_AGENT_USER: ${STORE_DB_AGENT_USER}
+    secrets:
+      - source: store_db_root_password
+        target: root_password
+      - source: store_db_non_root_password
+        target: non_root_password
+      - source: store_db_agent_password
+        target: agent_password
+    volumes: 
+      - store_db_data:/var/lib/postgresql
+      - ./store-db/create_users.sh:/docker-entrypoint-initdb.d/01-create_users.sh:ro
+      - ./store-db/create_tables.sql:/docker-entrypoint-initdb.d/02-create_tables.sql:ro
+      - ./store-db/create_views.sql:/docker-entrypoint-initdb.d/03-create_views.sql:ro
+      - ./store-db/grant_privileges.sh:/docker-entrypoint-initdb.d/04-grant_privileges.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 60s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+
+  chat-db:
+    image: postgres:17.11-bookworm
+    container_name: chat-db
+    restart: always
+    ports:
+      - "${CHAT_DB_HOST_PORT}:5432"
+    environment:
+      POSTGRES_DB: ${CHAT_DB_NAME}
+      POSTGRES_USER: ${CHAT_DB_ROOT_USER}
+      POSTGRES_PASSWORD_FILE: /run/secrets/root_password
+      POSTGRES_NON_ROOT_USER: ${CHAT_DB_NON_ROOT_USER}
+    secrets:
+      - source: chat_db_root_password
+        target: root_password
+      - source: chat_db_non_root_password
+        target: non_root_password
+    volumes:
+      - chat_db_data:/var/lib/postgresql
+      - ./chat-db/create_tables.sql:/docker-entrypoint-initdb.d/01-create_tables.sql:ro
+      - ./chat-db/create_users.sh:/docker-entrypoint-initdb.d/02-create_users.sh:ro
+      - ./chat-db/grant_privileges.sh:/docker-entrypoint-initdb.d/03-grant_privileges.sh:ro
+      - ./chat-db/init_tables.sh:/docker-entrypoint-initdb.d/04-init_tables.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 60s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+
+  chat-cache:
+    image: redis:7-alpine
+    container_name: chat_cache
+    restart: always
+    ports:
+      - "${CHAT_CACHE_HOST_PORT}:6379"
+    volumes:
+      - chat_cache_data:/data
+    secrets:
+      - chat_cache_password
+    command: sh -c 'redis-server --save 60 1 --loglevel notice --requirepass "$$(cat /run/secrets/chat_cache_password)"'
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$(cat /run/secrets/chat_cache_password)\" ping | grep PONG || exit 1"]
+      interval: 60s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+
+  ollama-lb:
+    image: nginx:alpine
+    container_name: ollama-lb
+    restart: always
+    ports:
+      - "${OLLAMA_HOST_PORT}:11434"
+    secrets:
+      - ollama_nodes
+    volumes:
+      - ./ollama-lb/nginx.conf:/etc/nginx/nginx.conf:ro
+    command: ["nginx", "-g", "daemon off;"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:11434/ || exit 1"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+
+  embeddings-api:
+    build:
+      context: .
+      dockerfile: ./docker/embeddings-api/Dockerfile
+      args:
+        TOKENIZER_MODEL: ${TOKENIZER_MODEL}
+        EMBEDDINGS_MODEL: ${EMBEDDINGS_MODEL}
+    image: embeddings-api
+    container_name: embeddings-api
+    restart: always
+    ports:
+    - "${EMB_API_HOST_PORT}:8000"
+    environment:
+      TOKENIZER_MODEL: ${TOKENIZER_MODEL}
+      EMBEDDINGS_MODEL: ${EMBEDDINGS_MODEL}
+    secrets:
+      - source: embeddings_api_admin_key
+        target: api_key
+    volumes:
+      - ./embeddings-api:/home/appuser/app/
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+
+  app-api:
+    build:
+      context: .
+      dockerfile: docker/app-api/Dockerfile
+    image: app-api
+    container_name: app-api
+    ports:
+      - "${APP_API_HOST_PORT}:8000"
+    environment:
+      STORE_DB_NAME: ${STORE_DB_NAME}
+      STORE_DB_NON_ROOT_USER: ${STORE_DB_NON_ROOT_USER}
+      STORE_DB_AGENT_USER: ${STORE_DB_AGENT_USER}
+      CHAT_DB_NAME: ${CHAT_DB_NAME}
+      CHAT_DB_NON_ROOT_USER: ${CHAT_DB_NON_ROOT_USER}
+    secrets:
+      - store_db_non_root_password
+      - store_db_agent_password
+      - chat_db_non_root_password
+      - chat_cache_password
+      - embeddings_api_admin_key
+      - app_api_admin_key
+    volumes:
+      - ./app-api/:/home/appuser/app/
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    depends_on:
+      store-db:
+        condition: service_healthy
+      chat-db:
+        condition: service_healthy
+      chat-cache:
+        condition: service_healthy
+      embeddings-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+
+secrets:
+  store_db_root_password:
+    file: ./secrets/store_db_root_password
+  store_db_non_root_password:
+    file: ./secrets/store_db_non_root_password
+  store_db_agent_password:
+    file: ./secrets/store_db_agent_password
+  chat_db_root_password:
+    file: ./secrets/chat_db_root_password
+  chat_db_non_root_password:
+    file: ./secrets/chat_db_non_root_password
+  ollama_nodes:
+    file: ./secrets/ollama_nodes
+  chat_cache_password:
+    file: ./secrets/chat_cache_password
+  embeddings_api_admin_key:
+    file: ./secrets/embeddings_api_admin_key
+  app_api_admin_key:
+    file: ./secrets/app_api_admin_key
+
+
+volumes:
+  store_db_data:
+  chat_db_data:
+  chat_cache_data:

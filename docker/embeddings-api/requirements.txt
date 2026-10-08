@@ -1,0 +1,14 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+pydantic
+requests
+fastapi[standard]
+
+tqdm
+
+numpy
+scipy
+torch==2.10.0+cpu
+transformers
+sentence-transformers
+langchain-text-splitters
